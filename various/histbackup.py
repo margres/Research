@@ -1,3 +1,11 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Feb 12 18:02:27 2021
+
+@author: mrgr
+"""
+
 
 # -*- coding: utf-8 -*-
 # @Author: lshuns & mrgr
@@ -16,15 +24,15 @@
 import numpy as np
 import pandas as pd
 import os
+import sys
 import matplotlib.pyplot as plt
 import time 
 from scipy import signal
 # Self-defined package
-import sys
 sys.path.insert(0,os.path.realpath('..')) 
-from Images import TFunc, dTFunc, Images, TContourplot
+from Images import TFunc, dTFunc, Images, main
 from Fouriertrans import Fd_w,FT_clas
-from PlotModels import PutLabels
+
 
      
 
@@ -287,7 +295,30 @@ def FtHistFunc(xL12, lens_model, kappa=0, gamma=0, tlim=6., dt=1e-2):
 
     return tau_list, Ftd, Ft_list, muI,tauI,typeI,tshift
 
+def fit_Func(t_ori,Ft_orig,funct, tauI):
+    
+    '''
+    fitting of the smoothed curve
+    '''
 
+def PutLabels (x_label, y_label, title):
+    #plt.style.use('ggplot')
+    plt.rcParams["figure.figsize"] = (6,6)
+    plt.title(title)
+    plt.xlabel(x_label)
+    plt.ylabel(y_label)
+    
+    params = {'axes.labelsize': 16,
+              'axes.titlesize': 16,
+              'xtick.labelsize' : 16,
+              'ytick.labelsize' : 16,
+              'font.size':16,
+              'legend.fontsize':12,
+              'lines.markersize':6
+             }
+    plt.rcParams.update(params)
+    plt.tight_layout()
+    
 def geom_optics(T,m,t, Itype):  
     
         if Itype=='min':    
@@ -309,12 +340,9 @@ def Phase(F):
 
 def HistMethod(xL,kappa,gamma, lens_model):
     
-    
-    CreateContourplot(xL,kappa,gamma, lens_model
-    
     xL1,xL2=xL[0],xL[1]
     
-    main(xL,kappa,gamma, lens_model)
+    Images.main(xL,kappa,gamma, lens_model)
     #info for plots and saved files
     add_info=lens_model+'_x1_'+str(xL1)+ '_x2_'+str(xL2)+'_k_'+str(kappa)+'_g_'+str(gamma)
     path='./2D_Results/'+lens_model
@@ -336,12 +364,14 @@ def HistMethod(xL,kappa,gamma, lens_model):
     print('start running...')
     start = time.time()
     tau_list, Ftd, Ft_list, muI, tauI, typeI,tshift = FtHistFunc([xL1, xL2], lens_model, kappa, gamma, tlim, dt)
-    print('finished in', time.time()-start) 
+    time=time.time()-start
+    print('finished in', time) 
     
     
     dt=np.diff(tau_list)[-1]
     print ('critical points magnification and time' +muI, tauI)
-     
+    
+  
     
 ################ Plot F   #############################################
     
@@ -389,7 +419,6 @@ def HistMethod(xL,kappa,gamma, lens_model):
     w,F_diff=Fd_w(t_new,Ft_new,tau_list,Ftd)   #Fourier transform  
     
     w_range=np.round(np.linspace(0.001,100,1050),5)
-    
     #semi-classical contribution
     F_clas=np.zeros((4,len(w_range)), dtype="complex_")
 
@@ -427,17 +456,250 @@ def HistMethod(xL,kappa,gamma, lens_model):
     
 if __name__ == '__main__':
 
-
+    
     # lens
     lens_model = 'SIS'
     xL1 = 0.1
     xL2 = 0.1
-    xL=[xL1,xL2]
 
     # external shear
     kappa = 0
-    gamma = 0
+    gamma = 0.5
+
+    # accuracy
+    tlim = 0.5 
+    dt = 1e-3
     
-    HistMethod(xL,kappa,gamma, lens_model)
+    add_info=lens_model+'_x1_'+str(xL1)+ '_x2_'+str(xL2)+'_k_'+str(kappa)+'_g_'+str(gamma)
+    path='./2D_Results/'+lens_model
+
+
+    print('start running...')
+    start = time.time()
+    tau_list, Ftd, Ft_list, muI, tauI, typeI,tshift = FtHistFunc([xL1, xL2], lens_model, kappa, gamma, tlim, dt)
+    time=time.time()-start
+    print('finished in', time) 
+    
+    np.save('muI.npy', muI)
+    np.save('tau_list.npy', tau_list)
+    np.save('tauI.npy', tauI)
+    np.save('Ftd.npy', Ftd)
+    np.save('Ft_list.npy', Ft_list)
+    np.save('tshift.npy', tshift)
+    np.save('typeI.npy', typeI)
+    
+    
+    '''
+    muI = np.load('muI.npy')
+    tauI = np.load('tauI.npy')
+    tau_list= np.load('tau_list.npy')
+    Ftd = np.load('Ftd.npy')
+    Ft_list= np.load('Ft_list.npy')
+    tshift= np.load('tshift.npy')
+    typeI= np.load('typeI.npy')
+    '''
+    
+    dt=np.diff(tau_list)[-1]
+    print (muI, tauI)
+    text_shear=' with external shear'
+    if gamma!=0 or kappa!=0:
+        title=lens_model+text_shear
+    else:
+        title=lens_model
+        
+    coord='$x_1$='+str(xL1)+' $x_2$='+str(xL2)
+    shear='$\gamma$='+str(gamma)+' $\kappa$='+str(kappa)
+    
+################ Plot F   #############################################
+    
+    PutLabels('t','F(t)', title )    
+    outfile = './2D_Results/'+lens_model+'/Ft'+add_info+'.png'
+    plt.plot(tau_list, abs(Ft_list), '-', c='tab:blue')
+    
+    print(np.where(tau_list==tauI[0]))
+    for i,(T,m) in enumerate(zip(tauI, muI)):
+        tmp=np.abs(np.array(tau_list) - T).argmin()
+        plt.scatter(T,Ft_list[tmp], c='r')
+        
+    plt.figtext(.2, .8, coord, fontsize=12)
+    plt.figtext(.2, .75, shear, fontsize=12)
+    
+    plt.savefig(outfile, dpi=100)
+        
+    plt.show()
+    plt.close()
+
+    print('Plot saved to', outfile)
+
+
+################ Plot F(t) extrapolated at high t   ########################
+  
+    
+    PutLabels('t','F(t)','Extrapolation at high t')   
+    outfile='./2D_Results/'+lens_model+'/Ft_extended'+add_info+'.png'
+    
+    plt.plot(tau_list,Ft_list, label='original', c='tab:blue')
+    text=np.arange(tau_list[-1],10,dt)
+    asymptote=np.zeros_like(text)
+    for T,m, ty in zip(tauI, muI,typeI):
+        asymptote+=geom_optics(T,m,text,ty) 
+    #asymptote+=0.5*np.sqrt(xL1**2.+xL2**2)
+    plt.plot(text,asymptote,'--' ,label='geom',c='cyan' )   
+    
+    hshift=Ft_list[-1]-asymptote[0]
+    plt.plot(text,asymptote+hshift, label='geom + shift',  c='cyan')
+    asymptote+=hshift
+    
+    Ft_new = np.concatenate([Ft_list, asymptote[1:]])
+    t_new= np.concatenate([tau_list, text[1:]])
+    print(len(t_new),len(Ft_new))
+    #plt.plot(t_new,Ft_new, label='final')
+    
+    
+    if False:
+        mask_asymptote=Ft_new>1
+        asymptote=np.ones(len(Ft_new[~mask_asymptote]))
+        Ft_new = np.concatenate([Ft_new[mask_asymptote],asymptote])
+        plt.plot(t_new,Ft_new, '-', label='normalized')
+        #plt.show()
+    
+    
+    
+    #plt.plot(t_new,Ft_new,'.', label='final', lw=0.3)
+    
+    plt.figtext(.2, .2, coord, fontsize=12)
+    plt.figtext(.2, .15, shear, fontsize=12)
+    
+    plt.legend()  
+    #plt.xlim(0,100)
+    plt.ylim(bottom=0)
+    plt.savefig(outfile,dpi=300)
+    plt.show()
+    plt.close()
+    
+
+################       Windowing               ##############################
+    
+    
+    PutLabels('x','y','Window Function')   
+    window = signal.cosine(2*len(t_new))    #create the window
+    Ft_wind=Ft_new*window[int(window.size/2.):] #apply it
+    plt.plot(t_new,window[int(window.size/2.):])
+    plt.savefig('./2D_Results/Window.png',dpi=300)
+    plt.show()
+    plt.close()
+    
+    
+    PutLabels('t','F(t)','F(t) -- Windowed')   
+    plt.plot(t_new, Ft_new,label='original', c='tab:blue')    
+    plt.plot(t_new, Ft_wind,label='windowed', c='cyan')
+
+    #plt.ylim(0,2)
+    plt.legend()
+    plt.show()
+    
+    Ft_new=Ft_wind    
+    #Ft_new=np.ones(len(Ft_new))
+    
+    
+    
+################ Plot magnification factor   ##############################    
+    
+    PutLabels('w','|F(w)|', title)  
+    w,F_diff=Fd_w(t_new,Ft_new,tau_list,Ftd)    
+    
+    w_range=np.round(np.linspace(0.001,100,1050),5)
+    
+    
+    #phase shift due to the first image
+    #F_diff*=np.exp(-1j*tshift*w)
+    
+    
+    #Classical contribution
+    F_clas=np.zeros((4,len(w_range)), dtype="complex_")
+    #www=np.zeros((4,len(w_range)), dtype="complex_")
+    for i,(m,t, tyI) in enumerate(zip(muI,tauI, typeI)):
+        F_clas[i,:]=FT_clas(w_range,t,m, tyI)
+        #www[i,:]=FT_clas(w_range,t,m)
+    #www=np.sum(www,axis=0)
+    F_clas=np.sum(F_clas,axis=0)
+    
+
+    
+    Fphase=np.angle(F_diff)
+    
+    df = pd.DataFrame(list(zip(F_diff,Fphase,w)),columns=['Famp','Fphase','w'] )
+    df.to_csv('./2D_Results/'+lens_model+'/F/'+lens_model+'Histcount_'+add_info+'.txt', sep='\t')
+    
+    lim=w<100
+    
+    if lens_model=='point' and xL1==0.1 and xL2==0.1:
+        #plot analytical
+        
+        #wa = np.arange(0.01, 200, 0.001)
+        #Fwa = np.loadtxt('./test/Fw_analytical.txt', dtype='cfloat')
+        dfpoint=pd.read_csv('./Analytic_pointmass_lens_dist_0.14.txt', sep="\t")
+        amp=dfpoint.Famp.values
+        wa=dfpoint.w.values
+        plt.plot(wa, amp, label='analytical - no shear', c='cyan',lw=0.5)
+        
+        
+    elif lens_model=='SIS' and xL1==0.1 and xL2==0.1:
+        
+        df_b0=pd.read_csv('./Results/SIScore/Levin_SIScore_lens_dist_0.141_a_1_b_0_c_1.txt', sep="\t")
+        amp_b0=[float(abs(complex(i))) for i in df_b0.res_adaptive.values]
+        wa=np.linspace(0.001,100,1000)
+        plt.plot(wa, amp_b0,label='Levin',c='cyan', lw=0.5)
+    
+    plt.plot(w_range, np.abs(F_clas), '--',label='F semi-classical',linewidth=0.5, c='darkslategrey')
+    
+    if gamma==0 and kappa==0:
+        st='.'
+    else:
+        st='-'
+        
+    plt.plot(w[lim], np.abs(F_diff)[lim], st,label='Hist counting',  c='tab:blue')  
+    plt.figtext(.2, .2, coord, fontsize=12 )
+    plt.figtext(.2, .15, shear, fontsize=12)
+    
+    
+    plt.xscale('log') 
+    #plt.yscale('log')
+    plt.legend(loc=2)
+    #plt.xlim(0,100)
+    plt.savefig(path+'/2DAmp_'+add_info+'.png',dpi=300)
+    plt.show()
+
+
+
+    PutLabels('w','$\Phi_F$', title)   
+    plt.plot(w_range, Phase(F_clas), 'k--',label='F semi-classical', linewidth=0.5)
+    #plt.plot(w_range, www )
+    
+    plt.figtext(.2, .2, coord, fontsize=12)
+    plt.figtext(.2, .15, shear, fontsize=12)
+    
+    
+    if lens_model=='point' and xL1==0.1 and xL2==0.1:
+        phase=dfpoint.Fphase.values
+        plt.plot(wa, phase, label='analytical - no shear', c='cyan',lw=0.5)
+        
+    elif lens_model=='SIS' and xL1==0.1 and xL2==0.1:
+        phase_b0=[float(-1j*np.log(complex(r)/abs(complex(r)))) for r in df_b0.res_adaptive.values]
+        plt.plot(wa, phase_b0, label='Levin', c='cyan',lw=0.5)
+        
+        
+    plt.plot(w[lim],Fphase[lim], st,label='Hist counting',  c='tab:blue') 
+    plt.xscale('log')
+    #plt.axvline(0.1)
+    plt.xlim(0,100)
+    
+
+    plt.legend(loc=2)
+    plt.savefig(path+'/2DPhase_'+add_info+'.png',dpi=300)
+    plt.show()
+    
+    
+    
     
     

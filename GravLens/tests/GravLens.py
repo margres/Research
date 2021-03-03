@@ -6,6 +6,41 @@ Created on Tue Feb  2 17:37:54 2021
 @author: mrgr
 """
 
+import numpy as np
+
+def test_HistCounting():
+    from ..HistCounting import HistMethod 
+    
+    lens_model = 'SIS'
+    xL1 = 0.1
+    xL2 = 0.1
+    xL=[xL1,xL2]
+
+    # external shear
+    kappa = 0
+    gamma = 0
+
+    
+    assert HistMethod(xL,kappa,gamma,lens_model) 
+    
+  
+def test_Levin():
+    from ..Levin.Levin import LevinMethod 
+    y=0.1
+    #w_range=np.round(np.linspace(0.001,100,1050),5)
+    w_range= np.round(np.linspace(0.001,10,10),5)   
+    a=1 #amplitude parameter
+    b=0.5 #[0,0.25,0.5,0.75,1,1.5]#core
+    c=1 #flattening parameter
+    p=1 #poewer law value
+    fact=[a,b,c,p]
+ 
+    lens_model='SIS'
+    
+    assert LevinMethod(w_range,y, lens_model, fact, typesub='Adaptive')
+    
+    
+'''
 if __name__ == '__main__':
     
     import numpy as np
@@ -38,4 +73,4 @@ if __name__ == '__main__':
         lens_model='point'
         models=['point','SIS']    
         HistMethod(yL,kappa,gamma, lens_model)
-        
+ '''       

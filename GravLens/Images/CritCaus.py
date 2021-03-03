@@ -10,6 +10,10 @@ Functions to plot critical curves and caustics
 #import scipy.optimize as op
 import numpy as np 
 import matplotlib.pyplot as plt
+import sys
+import os
+sys.path.insert(0,os.path.realpath('..')) 
+from PlotModels import PutLayout
 
 
 def DistMatrix( dpsid11,dpsid22,dpsid12, kappa,gamma):
@@ -29,7 +33,6 @@ def SIScore(x12,kappa,gamma,fact, caustics=False):
     a=fact[0]
     b=fact[1]
     
-
     x1=x12[0]
     x2=x12[1]
     
@@ -157,11 +160,9 @@ def softenedpowerlawkappa(x12,kappa, gamma, fact,caustics=False):
         
         dpsi1= (x1*a**(2 - p)*((b**2 + x1x22)**(p/2) - b**p))/(p *x1x22)
         dpsi2= (x2*a**(2 - p)*((b**2 + x1x22)**(p/2) - b**p))/(p *x1x22)
-        #dpsid11= (a**(2 - p)*b**p*(x1**2 - x2**2))/(p*x1x22**2) + (a**(2 - p)*x1x22**(p/2 - 2)* (-b**2*x1**2 + b**2*x2**2 + p*x1**4 + p*x1**2*x2**2 - x1**4 + x2**4)*(b**2/x1x22 + 1)**(p/2))/(p*(b**2 + x1x22))
+        
         dpsid11=(a**(2 - p) *((x1x22)**(p/2)*(b**2*(x2**2 - x1**2) + (p - 1)*x1**4 + p*x1**2*x2**2 + x2**4)*(b**2/(x1x22)+1)**(p/2) + b**p*(x1 - x2)*(x1 + x2)*(b**2 + x1**2 + x2**2)))/(p*(x1x22)**2*(b**2 + x1x22)) 
         dpsid22=(a**(2 - p)*((x1x22)**(p/2)*(b**2*(x1 - x2)*(x1 + x2) + p*x1**2*x2**2 + (p-1)*x2**4+x1**4)*(b**2/(x1**2+x2**2)+1)**(p/2)-b**p*(x1-x2)*(x1+x2)*(b**2+x1x22)))/(p*x1x22**2*(b**2+x1**2+x2**2))
-        #dpsid22= (a**(2 - p)*b**p*(x2**2 - x1**2))/(p*x1x22**2) + (a**(2 - p)*x1x22**(p/2 - 2)* (b**2*x1**2 - b**2*x2**2 + p*x1**2*x2**2 + p*x2**4 + x1**4 - x2**4) *(b**2/x1x22 + 1)**(p/2))/(p*(b**2 + x1x22))
-        #dpsid12= (x1*x2*a**(2 - p)*(((p - 2)*(x1x22) - 2*b**2)*(b**2 + x1x22)**(p/2) + 2*b**p*(b**2 + x1**2 + x2**2)))/(p*x1x22**2*(b**2 + x1x22))
         dpsid12=(x1*x2*a**(2-p)*(((p - 2)*x1x22 - 2*b**2)*(b**2 + x1x22)**(p/2) + 2 *b**p *(b**2 + x1x22)))/(p*x1x22**2*(b**2 + x1x22))
         
         
@@ -184,16 +185,9 @@ def LensEq(x12,kappa, gamma, fact, lens_model):
     
     x1 = x12[0] 
     x2 = x12[1]
-    E_r=1
     
     alpha=eval(lens_model)((x1,x2),kappa, gamma, fact, caustics=True)
-    beta=np.column_stack((x1,x2))-E_r*alpha
-    
-    '''
-    print(x[0][:10])
-    print(alpha[:10])
-    print(beta[:10])
-    '''
+    beta=np.column_stack((x1,x2))-alpha
     
     return beta
 
@@ -208,7 +202,6 @@ def PlotCurves(xS12,xL12,kappa,gamma,lens_model,fact):
     
     a=fact[0]
     b=fact[1]
-    c=fact[2]
     p=fact[3]
     
     shear='$\gamma$='+str(gamma)+' $\kappa$='+str(kappa)
@@ -222,18 +215,7 @@ def PlotCurves(xS12,xL12,kappa,gamma,lens_model,fact):
     crit_curv=eval(lens_model)((X,Y), kappa, gamma, fact)
     
     plt.figure(dpi=100)
-
-    plt.tight_layout()
-    plt.rcParams["figure.figsize"] = (6,6)
-    params = {'axes.labelsize': 16,
-              'axes.titlesize': 16,
-              'xtick.labelsize' : 16,
-              'ytick.labelsize' : 16,
-              'font.size':16,
-              'legend.fontsize':12,
-              'lines.markersize':6
-             }
-    plt.rcParams.update(params)
+    PutLayout()
     
     cp = plt.contour(X,Y, crit_curv,[0], colors='k',linestyles= '-', linewidths=0.1)     
     
@@ -251,7 +233,7 @@ def PlotCurves(xS12,xL12,kappa,gamma,lens_model,fact):
     
         xyCaus=LensEq((xCrit,yCrit), kappa, gamma, fact, lens_model)
        
-        #print(xyCaus)
+
         if xyCaus[:,0].any() <1e5 and xyCaus[:,1].any() <1e5 :
             plt.scatter(0,0, s=15, c='k', marker='o')
         
@@ -317,7 +299,18 @@ def PlotCurves(xS12,xL12,kappa,gamma,lens_model,fact):
     
     
     
+
+    
 if __name__ == '__main__':
+    
+    
+    
+    '''
+    
+    Here the lens is in the center
+    
+    
+    '''
     
     kappa=0
     gamma=0
@@ -330,15 +323,7 @@ if __name__ == '__main__':
     xL12=[xL1,xL2]
     
     
-    xS2=0.3
-    #xS2=np.append(0.1,xS2)
-    #xS2=np.array([ 0.25, 0.5 , 0.75, 1 ])
-
-
-    #xS2=np.sqrt(0.1**2 + 0.1**2)  #np.array([0.1,0.25,0.5,1,3]) 
-
-    #[0.25,0.5,0.75,1,3]
-   
+    xS2=0.3   
     xS1=np.zeros_like(xS2)
     xS12=[xS1,xS2]
     

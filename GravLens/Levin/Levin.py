@@ -658,6 +658,36 @@ def Smoothing(amp,w,t):
         
     #return amp,w
 
+
+
+def Filename(lens_model):
+    
+    if lens_model=='powerlaw':
+            add_info=lens_model+'_lens_dist_'+str(y)+'_p_'+str(p)+'.txt'
+        
+    elif lens_model=='softenedpowerlaw':
+        
+        add_info=lens_model+'_lens_dist_'+str(y)+'_a_'+str(a)+'_b_'+str(b)+ '_p_'+str(p) + '.txt'        
+    
+    elif lens_model=='softenedpowerlawkappa':
+        
+        add_info=lens_model+'_lens_dist_'+str(y)+'_a_'+str(a)+'_b_'+str(b) + '_p_'+str(p) + '.txt'  
+    
+    elif lens_model=='point':
+        
+        add_info=lens_model+'_lens_dist_'+str(y) + '.txt'  
+        
+    else:
+        add_info=lens_model+'_lens_dist_'+str(y)+'_a_'+str(a)+'_b_'+str(b) + '.txt'  
+        
+    path='../1D_Results/'+lens_model+'/'+ add_info
+    
+    if not os.path.exists(path):
+        os.makedirs(path)
+
+    
+    return path
+
 def LevinMethod(w_range,y, lens_model, fact, typesub='Adaptive'):
     
     a,b,c,p =fact[0],fact[1],fact[2],fact[3]
@@ -689,41 +719,18 @@ def LevinMethod(w_range,y, lens_model, fact, typesub='Adaptive'):
         res.append(restemp)  
         time.append(time.time()-start)
         
-        print(abs(restemp))
-            #print('phase', cmath.phase(res))
-           
+        #print(abs(restemp))
+        #print('phase', cmath.phase(res))
             
-        #I take out some points to take into account edge effects
-        #df = pd.DataFrame(list(zip(res_simple,time_simple,res_fixed,time_fixed, res_adaptive,time_adaptive)),columns=['res_simple','time_simple','res_fixed','time_fixed','res_adaptive','time_adaptive'] )
-        
-        res,time_adaptive,w_range=res[:-50],time_adaptive[:-50],w_range[:-50]  
+        #I take out some points to take into account edge effects  
+        res,time,w_range=res[:-50],time[:-50],w_range[:-50]  
         Smoothing(res,w_range,time)
        
-        df = pd.DataFrame(list(zip(w_range,res,time)),columns=['w','res_adaptive','time'] )
-        if lens_model=='powerlaw':
-            add_info=lens_model+'_lens_dist_'+str(y)+'_p_'+str(p)
-            
-        elif lens_model=='softenedpowerlaw':
-            
-            add_info=lens_model+'_lens_dist_'+str(y)+'_a_'+str(a)+'_b_'+str(b)+ '_p_'+str(p)          
-        
-        elif lens_model=='softenedpowerlawkappa':
-            
-            add_info=lens_model+'_lens_dist_'+str(y)+'_a_'+str(a)+'_b_'+str(b) + '_p_'+str(p)   
-        
-        elif lens_model=='point':
-            
-            add_info=lens_model+'_lens_dist_'+str(y)
-            
-        else:
-            add_info=lens_model+'_lens_dist_'+str(y)+'_a_'+str(a)+'_b_'+str(b)
-            
-        path='../1D_Results/'+lens_model
-        
-        if not os.path.exists(path):
-            os.makedirs(path)
-                   
-        df.to_csv(path+'/Levin_'+add_info+'.txt', sep='\t')
+        #save
+        df = pd.DataFrame(list(zip(w_range,res,time)),columns=['w','result','time'] )        
+        path = Filename(lens_model)               
+        df.to_csv(path, sep='\t')
+     
         
 
 if __name__ == '__main__':
@@ -747,10 +754,6 @@ if __name__ == '__main__':
     c=1 #flattening parameter
     p=1 #poewer law value
     fact=[a,b,c,p]
- 
-    #pLin=[1.5]
-   # yLin=np.linspace(0,1.5,7)
-   # bLin=[0.0,0.25,0.5,1.0,1.5]
 
     lens_model='softenedpowerlaw'
     models=['point','SIS','SIScore','softenedpowerlaw','softenedpowerlawkappa']
@@ -759,31 +762,3 @@ if __name__ == '__main__':
     #PlotCurves((0,0),(0,y),0,0,lens_model,[a,b,c,p])
     
     
-
-
-'''
-# ++++++++++++++++++++++++++ simple with whole range
-
-start = time.time()
-I_cos_sin = InteFunc_simple(w, y,model_lens, [a,b,c])
-print("simple method finished in", time.time()-start)
-print('I_cos', I_cos_sin[0])
-print('I_sin', I_cos_sin[1])
-
-res = const * (I_cos_sin[0] + 1j*I_cos_sin[1])
-res_simple.append(res)
-time_simple.append(time.time()-start)
-print('phase', cmath.phase(res))
-
-# ++++++++++++++++++++++++++ fixed subdivision
-start = time.time()
-I_cos_sin = InteFunc_fix_step(w, y,model_lens,[a,b,c])
-print("fixed subdivision finished in", time.time()-start)
-print('I_cos', I_cos_sin[0])
-print('I_sin', I_cos_sin[1])
-
-res = const * (I_cos_sin[0] + 1j*I_cos_sin[1])
-res_fixed.append(res)
-time_fixed.append(time.time()-start)
-print('phase', cmath.phase(res))
-'''

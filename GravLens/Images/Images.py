@@ -17,7 +17,8 @@ import numpy as np
 import scipy.optimize as op
 import matplotlib.pyplot as plt
 import os
-
+import warnings
+warnings.filterwarnings("ignore")
 
 
 def TFunc(x12, xL12, lens_model, kappa=0, gamma=0,fact=[1,0,1]):
@@ -351,37 +352,19 @@ def Images(xL12, lens_model, kappa=0, gamma=0, fact=[1,0,1],return_mu=True, retu
 
     return nimages, xI12, mag, tau, Itype
 
-if __name__ == '__main__':
 
-    from CritCaus import PlotCurves
-    
-    '''
-    
-    Here the source is in the center of the coordinate system
-    
-    '''
 
+def TContourplot(xL,kappa,gamma, lens_model):
     
-    # lens
-    #lens_model = 'point'
-    lens_model= 'point'
-    xL1 = 0.1
-    xL2 = 0.1
-
-    # external shear
-    kappa = 0.1
-    gamma = 0.3
-
+    xL1=xL[0]
+    xL2=xL[1]
+    
     n_steps=800
-    n_bins=800
     xmin=-5
     xmax=5
     
-    #PlotCurves((xL1,xL2),(0,0),kappa,gamma,'SIScore',[1,0,1,1])
-
     if lens_model=='SIS':
         n=20
-
     else:
         n=50
     
@@ -396,16 +379,10 @@ if __name__ == '__main__':
     x_lin=np.linspace(xmin,xmax,n_steps)
   
 
-    X,Y = np.meshgrid(x_lin, x_lin) # grid of point
-    
-    fact=[1,0.5,1]
-    
-    #PlotCurves([xS1,xS2],[xL1,xL2],kappa,gamma,lens_model, fact)
-    
-    tau = TFunc([X,Y], [xL1, xL2], lens_model, kappa, gamma, fact)
+    X,Y = np.meshgrid(x_lin, x_lin) # grid of point 
+    tau = TFunc([X,Y], [xL1, xL2], lens_model, kappa, gamma, [1,1,1])
   
-    
-    nimages, xI12, muI, tauI,Itype = Images([xL1, xL2], lens_model, kappa, gamma, fact,return_mu=True, return_T=True) 
+    nimages, xI12, muI, tauI,Itype = Images([xL1, xL2], lens_model, kappa, gamma, [1,1,1],return_mu=True, return_T=True) 
     print('number of images', nimages)
     print('positions', xI12)
     print('magnification', muI)
@@ -422,30 +399,23 @@ if __name__ == '__main__':
     
     # contour        
     cp = ax.contour(X, Y, tau, np.linspace(0,1,n), linewidths=0.5, extent=[-2,2,-2,2], colors='black')
-    #plt.xlim(np.min(X)-xL1,np.max(X)+xL1)
-    #plt.ylim(np.min(X)-xL2,np.max(X)+xL2)
 
     plt.xlim(-3,3)
     plt.ylim(-3,3)
 
     plt.scatter(xL1, xL2, marker='x',color='r', label='lens')
     plt.scatter(0, 0, marker='*',color='orange', label='source')
-    #plt.gca().set_aspect('equal', adjustable='box')
-   
-    
-    
-    #cp.ax.set_ylabel('$x_2$', fontsize=16)
-    #cp.ax.set_xlabel('$x_1$', fontsize=16 )
+
     plt.xlabel('$x_1$', fontsize=16)
-    plt.ylabel('$x_2$', fontsize=16 )
+    plt.ylabel('$x_2$', fontsize=16)
     
     additional_info=lens_model+'x1_'+str(xL1)+ '_x2_'+str(xL2)+'_k_'+str(kappa)+'_g_'+str(gamma)
     coord='$x_1$='+str(xL1)+' $x_2$='+str(xL2)
     shear='$\gamma$='+str(gamma)+' $\kappa$='+str(kappa)
     
     
-    plt.figtext(.1, .15, coord, fontsize=12)
-    plt.figtext(.1, .12, shear, fontsize=12)
+    plt.figtext(.2, .15, coord, fontsize=12)
+    plt.figtext(.2, .12, shear, fontsize=12)
     plt.title(title, fontsize=13)
     plt.legend()
     
@@ -453,9 +423,32 @@ if __name__ == '__main__':
         
     if not os.path.exists(path):
         os.makedirs(path)
-        
-    #plt.subplots_adjust(left=0.1, right=0.9, bottom=0.3, top=0.9)
+
     plt.tight_layout() 
     plt.savefig(path+'/Cplot_'+additional_info+'.png', bbox_inches='tight')
     plt.show()
     
+    
+
+if __name__ == '__main__':
+
+
+    import sys
+    '''
+    
+    Here the source is in the center of the coordinate system
+    
+    '''
+
+    # lens
+
+    lens_model= 'point'
+    xL1 = 0.1
+    xL2 = 0.1
+    xL=[xL1,xL2]
+    
+    # external shear
+    kappa = 0.1
+    gamma = 0.3
+
+    main(xL,kappa,gamma, lens_model)

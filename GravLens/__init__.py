@@ -8,3 +8,4 @@ Created on Fri Jan 29 14:56:14 2021
 
 from Levin.Levin import LevinMethod
 from HistCounting import HistMethod
+from PlotModels import PutLabels, PutLayout
